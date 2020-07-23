@@ -2,7 +2,7 @@ import socket
 
 SETUP_IP = '127.0.0.1'
 SETUP_UDP_PORT = 12666
-SETUP_MESSAGE = b'Setup1'
+SETUP_MESSAGE = b'\x01\x75' #0000000111110101
 setup_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 SPEED_TESTING_IP = '127.0.0.2'
