@@ -14,9 +14,10 @@ class FpgaMockup:
         print(f'Received setup, setup message: {data}')
         itnigier = int.from_bytes(data, 'big')
         bits = "{0:b}".format(itnigier)
-        self.mode = bits[-10:-8]            #[9:8]
+        print(bits)
+        self.mode = bits[-10:-7]            #[9:8]
         print(f'Mode set to: {self.mode}')
-        self.on = False #bool(int(bits[-8:-7]))
+        self.on = True #bool(int(bits[-8:-7]))
         # print(self.on)
         # if self.mode == b'01':
         #     print("BURST!!!")
