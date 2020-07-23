@@ -1,19 +1,47 @@
 import socket
+import json
 
-SETUP_IP = '127.0.0.1'
-SETUP_UDP_PORT = 12666
-SETUP_MESSAGE = b'Setup1'
-setup_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-SPEED_TESTING_IP = '127.0.0.2'
-SPEED_TESTING_UDP_PORT = 5005
-speed_test_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-speed_test_sock.bind((SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT))
+class UdpDatagram:
 
-# send setup info to FPGA
-setup_sock.sendto(SETUP_MESSAGE, (SETUP_IP, SETUP_UDP_PORT))
+    def __init__(self, data, destination):
+        self.data = data
+        self.destination = destination
 
-# receive packets from FPGA
-while True:
-    data, addr = speed_test_sock.recvfrom(1024)
-    print('Received packet form FPGA, data: %s' % data)
+
+class FpgaConnectionSpeedTester:
+
+    def __init__(self, setup_filename):
+        self.set_setup_from_file(setup_filename)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind((self.fcst_ip, self.fcst_port))
+
+    def set_setup_from_file(self, setup_filename):
+        with open(setup_filename, 'r') as read_file:
+            predefined_setup = json.load(read_file)
+        self.set_general_setup(predefined_setup)
+        self.prepare_setup_datagrams(predefined_setup)
+
+    def start_test(self):
+        pass
+
+    def send_setup_to_fpga(self):
+        for datagram in self.setup_datagrams:
+            self.sock.sendto(datagram.data, datagram.destination)
+
+    def set_general_setup(self, predefined_setup):
+        self.fpga_ip = predefined_setup['fpga_ip']
+        self.fcst_ip = predefined_setup['fcst_ip']
+        self.fcst_port = predefined_setup['fcst_port']
+
+    def prepare_setup_datagrams(self, predefined_setup):
+        self.setup_datagrams = []
+        for setup_datagram in predefined_setup['setup_datagrams']:
+            datagram = UdpDatagram(int(setup_datagram['data'], 2).to_bytes(2, byteorder='big'),
+                                   (predefined_setup['fpga_ip'], setup_datagram['fpga_port']))
+            self.setup_datagrams.append(datagram)
+
+
+if __name__ == '__main__':
+    fcst = FpgaConnectionSpeedTester('fcst_setup.json')
+    fcst.send_setup_to_fpga()
