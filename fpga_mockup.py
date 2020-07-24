@@ -20,9 +20,9 @@ class FpgaMockup:
         data = self.setup_sock_12666.recvfrom(16)[0]
         print("Finished Listening on 12666.")
 
-        print(f'Received setup, setup message: {data}')
-        intiger = int.from_bytes(data, 'big')
-        bits = "{0:b}".format(intiger)
+        print(f'Received setup on port 12666, setup message: {data}')
+        integer = int.from_bytes(data, 'big')
+        bits = "{0:b}".format(integer)
         print(bits)
         self.mode = bits[-10:-8]            #[9:8]
         print(f'Mode set to: {self.mode}')
@@ -34,7 +34,7 @@ class FpgaMockup:
         data = self.setup_sock_14666.recvfrom(16)[0]
         print("Finished Listening on 14666.")
 
-        print(f'Received setup, setup message: {data}')
+        print(f'Received setup on port 14666, setup message: {data}')
         self.padding.value = int.from_bytes(data, 'big')
         print(f"Set padding to {self.padding.value}")
 
@@ -43,7 +43,7 @@ class FpgaMockup:
         data = self.setup_sock_15666.recvfrom(64)[0]
         print("Finished Listening on 15666.")
 
-        print(f'Received setup, setup message: {data}')
+        print(f'Received setup on port 15666, setup message: {data}')
         self.number_of_test_packets.value = int.from_bytes(data, 'big')
         print(f"Set number of packets to {self.number_of_test_packets.value}")
 
