@@ -9,13 +9,21 @@ class FpgaConnectionSpeedTester:
     """
 
     def __init__(self, setup_filename):
-        self.setup = FcstSetup()
-        self.setup.set_setup_from_file(setup_filename)
+        self.set_setup(setup_filename)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.setup.fcst_ip, self.setup.fcst_port))
 
+    def set_setup(self, setup_filename):
+        try:
+            self.setup = FcstSetup()
+            self.setup.set_setup_from_file(setup_filename)
+            print('Setup complete')
+        except NotProperlyConfigured:
+            print('Error occurred while loading configuration. Setup incomplete.')
+            self.setup = None
+
     def start_test(self):
-        if self.setup.is_properly_configured():
+        if self.setup is not None:
             print('Starting test.')
             self.sock.sendto(self.setup.start_datagram.data, self.setup.start_datagram.destination)
         else:
@@ -28,15 +36,20 @@ class FpgaConnectionSpeedTester:
 
 class FcstSetup:
 
+    def __init__(self):
+        self.fpga_ip = None
+        self.fcst_ip = None
+        self.fcst_port = None
+        self.start_datagram = None
+        self.setup_datagrams = None
+
     def set_setup_from_file(self, setup_filename):
         with open(setup_filename, 'r') as read_file:
             predefined_setup = json.load(read_file)
         self.set_general_setup(predefined_setup)
         self.prepare_setup_datagrams(predefined_setup)
         if not self.is_properly_configured():
-            print('Error occurred while loading configuration. Setup incomplete.')
-        else:
-            print('Setup complete.')
+            raise NotProperlyConfigured
 
     def set_general_setup(self, predefined_setup):
         self.fpga_ip = predefined_setup['fpga_ip']
@@ -64,12 +77,10 @@ class FcstSetup:
                            (self.fpga_ip, datagram['fpga_port']))
 
     def is_properly_configured(self):
-        try:
-            if self.fpga_ip is not None and self.fcst_ip is not None and self.fcst_port is not None and \
-                    self.setup_datagrams is not None and self.start_datagram is not None:
-                return True
-        except:
-            return False
+        if self.fpga_ip is not None and self.fcst_ip is not None and self.fcst_port is not None and \
+                self.setup_datagrams is not None and self.start_datagram is not None:
+            return True
+        return False
 
 
 class UdpDatagram:
@@ -77,6 +88,10 @@ class UdpDatagram:
     def __init__(self, data, destination):
         self.data = data
         self.destination = destination
+
+
+class NotProperlyConfigured(Exception):
+    pass
 
 
 if __name__ == '__main__':
