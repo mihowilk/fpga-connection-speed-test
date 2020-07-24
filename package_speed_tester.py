@@ -9,9 +9,24 @@ class FpgaConnectionSpeedTester:
     """
 
     def __init__(self, setup_filename):
-        self.set_setup_from_file(setup_filename)
+        self.setup = FcstSetup()
+        self.setup.set_setup_from_file(setup_filename)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind((self.fcst_ip, self.fcst_port))
+        self.sock.bind((self.setup.fcst_ip, self.setup.fcst_port))
+
+    def start_test(self):
+        if self.setup.is_properly_configured():
+            print('Starting test.')
+            self.sock.sendto(self.setup.start_datagram.data, self.setup.start_datagram.destination)
+        else:
+            print('Cannot start test. Setup is incomplete.')
+
+    def send_setup_to_fpga(self):
+        for datagram in self.setup.setup_datagrams:
+            self.sock.sendto(datagram.data, datagram.destination)
+
+
+class FcstSetup:
 
     def set_setup_from_file(self, setup_filename):
         with open(setup_filename, 'r') as read_file:
@@ -23,17 +38,6 @@ class FpgaConnectionSpeedTester:
         else:
             print('Setup complete.')
 
-    def start_test(self):
-        if self.is_properly_configured():
-            print('Starting test.')
-            self.sock.sendto(self.start_datagram.data, self.start_datagram.destination)
-        else:
-            print('Cannot start test. Setup is incomplete.')
-
-    def send_setup_to_fpga(self):
-        for datagram in self.setup_datagrams:
-            self.sock.sendto(datagram.data, datagram.destination)
-
     def set_general_setup(self, predefined_setup):
         self.fpga_ip = predefined_setup['fpga_ip']
         self.fcst_ip = predefined_setup['fcst_ip']
@@ -41,19 +45,19 @@ class FpgaConnectionSpeedTester:
 
     def prepare_setup_datagrams(self, predefined_setup):
         self.setup_datagrams = []
-        for datagram in predefined_setup['setup_datagrams']:
+        for predefined_datagram in predefined_setup['setup_datagrams']:
             try:
-                self.start_datagram = self.prepare_as_start_datagram(datagram)
+                self.start_datagram = self.prepare_as_start_datagram(predefined_datagram)
             except KeyError:
-                setup_datagram = self.prepare_as_setup_datagram(datagram)
+                setup_datagram = self.prepare_as_setup_datagram(predefined_datagram)
                 self.setup_datagrams.append(setup_datagram)
 
-    def prepare_as_setup_datagram(self, datagram):
-        return self.make_datagram_from_predefined_setup(datagram)
+    def prepare_as_setup_datagram(self, predefined_datagram):
+        return self.make_datagram_from_predefined_setup(predefined_datagram)
 
-    def prepare_as_start_datagram(self, datagram):
-        if datagram['is_start_datagram']:
-            return self.make_datagram_from_predefined_setup(datagram)
+    def prepare_as_start_datagram(self, predefined_datagram):
+        if predefined_datagram['is_start_datagram']:
+            return self.make_datagram_from_predefined_setup(predefined_datagram)
 
     def make_datagram_from_predefined_setup(self, datagram):
         return UdpDatagram(int(datagram['data'], 2).to_bytes(2, byteorder='big'),
