@@ -7,9 +7,12 @@ class FpgaMockup:
         self.SETUP_UDP_PORT = SETUP_UDP_PORT
         self.setup_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.setup_sock.bind((SETUP_IP, SETUP_UDP_PORT))
-        print('Waiting for setup...')
-        data = self.setup_sock.recvfrom(1024)[0]
-        print('Received setup, setup : %s' % data)
+
+    def listen(self):
+        while True:
+            print('Waiting for setup...')
+            data = self.setup_sock.recvfrom(1024)[0]
+            print('Received setup,  data : %s' % data)
 
     def sending(self, SPEED_TESTING_IP='127.0.0.2', SPEED_TESTING_UDP_PORT=5005):
         print('Sending 10 packets')
@@ -17,5 +20,7 @@ class FpgaMockup:
             self.setup_sock.sendto(b'Speed test package',
                                    (SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT))
 
+
 if __name__ == "__main__":
     testing_fpga = FpgaMockup()
+    testing_fpga.listen()
