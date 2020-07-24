@@ -1,19 +1,100 @@
 import socket
+import json
 
-SETUP_IP = '127.0.0.1'
-SETUP_UDP_PORT = 12666
-SETUP_MESSAGE = b'\x01\xf5' # \x01\x75 - 0000000101110101 ||| \x01\xf5 - 0000000111110101
-setup_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-SPEED_TESTING_IP = '127.0.0.2'
-SPEED_TESTING_UDP_PORT = 5005
-speed_test_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-speed_test_sock.bind((SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT))
+class FpgaConnectionSpeedTester:
+    """
+    Or fcst for short. Measures raw data flow rate during transmission of UDP datagrams from FPGA. Setup datagrams
+    and connection parameters are configured using json.
+    """
 
-# send setup info to FPGA
-setup_sock.sendto(SETUP_MESSAGE, (SETUP_IP, SETUP_UDP_PORT))
+    def __init__(self, setup_filename):
+        self.set_setup(setup_filename)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind((self.setup.fcst_ip, self.setup.fcst_port))
 
-# receive packets from FPGA
-while True:
-    data, addr = speed_test_sock.recvfrom(1024)
-    print('Received packet form FPGA, data: %s' % data)
+    def set_setup(self, setup_filename):
+        try:
+            self.setup = FcstSetup()
+            self.setup.set_setup_from_file(setup_filename)
+            print('Setup complete')
+        except NotProperlyConfigured:
+            print('Error occurred while loading configuration. Setup incomplete.')
+            self.setup = None
+
+    def start_test(self):
+        if self.setup is not None:
+            print('Starting test.')
+            self.sock.sendto(self.setup.start_datagram.data, self.setup.start_datagram.destination)
+        else:
+            print('Cannot start test. Setup is incomplete.')
+
+    def send_setup_to_fpga(self):
+        for datagram in self.setup.setup_datagrams:
+            self.sock.sendto(datagram.data, datagram.destination)
+
+
+class FcstSetup:
+
+    def __init__(self):
+        self.fpga_ip = None
+        self.fcst_ip = None
+        self.fcst_port = None
+        self.start_datagram = None
+        self.setup_datagrams = None
+
+    def set_setup_from_file(self, setup_filename):
+        with open(setup_filename, 'r') as read_file:
+            predefined_setup = json.load(read_file)
+        self.set_general_setup(predefined_setup)
+        self.prepare_setup_datagrams(predefined_setup)
+        if not self.is_properly_configured():
+            raise NotProperlyConfigured
+
+    def set_general_setup(self, predefined_setup):
+        self.fpga_ip = predefined_setup['fpga_ip']
+        self.fcst_ip = predefined_setup['fcst_ip']
+        self.fcst_port = predefined_setup['fcst_port']
+
+    def prepare_setup_datagrams(self, predefined_setup):
+        self.setup_datagrams = []
+        for predefined_datagram in predefined_setup['setup_datagrams']:
+            try:
+                self.start_datagram = self.prepare_as_start_datagram(predefined_datagram)
+            except KeyError:
+                setup_datagram = self.prepare_as_setup_datagram(predefined_datagram)
+                self.setup_datagrams.append(setup_datagram)
+
+    def prepare_as_setup_datagram(self, predefined_datagram):
+        return self.make_datagram_from_predefined_setup(predefined_datagram)
+
+    def prepare_as_start_datagram(self, predefined_datagram):
+        if predefined_datagram['is_start_datagram']:
+            return self.make_datagram_from_predefined_setup(predefined_datagram)
+
+    def make_datagram_from_predefined_setup(self, datagram):
+        return UdpDatagram(int(datagram['data'], 2).to_bytes(2, byteorder='big'),
+                           (self.fpga_ip, datagram['fpga_port']))
+
+    def is_properly_configured(self):
+        if self.fpga_ip is not None and self.fcst_ip is not None and self.fcst_port is not None and \
+                self.setup_datagrams is not None and self.start_datagram is not None:
+            return True
+        return False
+
+
+class UdpDatagram:
+
+    def __init__(self, data, destination):
+        self.data = data
+        self.destination = destination
+
+
+class NotProperlyConfigured(Exception):
+    pass
+
+
+if __name__ == '__main__':
+    fcst = FpgaConnectionSpeedTester('fcst_setup.json')
+    fcst.send_setup_to_fpga()
+    fcst.start_test()
