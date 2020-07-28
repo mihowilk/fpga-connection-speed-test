@@ -1,5 +1,6 @@
 import socket
 import multiprocessing
+import ctypes
 
 FPGA_IP = '127.0.0.1'
 SPEED_TESTING_IP = '127.0.0.2'
@@ -20,7 +21,7 @@ class FpgaMockup:
         self.setup_sock_14666.bind((setup_ip, 14666))
         self.setup_sock_15666.bind((setup_ip, 15666))
         self.on = multiprocessing.Value('b', False)
-        self.mode = multiprocessing.Array('c', 16)
+        self.mode = multiprocessing.Value('i', 0)
         self.padding = multiprocessing.Value('i', 0)
         self.number_of_test_packets = multiprocessing.Value('i', 10)
 
@@ -34,16 +35,16 @@ class FpgaMockup:
 
         if is_nth_bit_set(integer, 9):
             if is_nth_bit_set(integer, 8):
-                self.mode = 'not used'          #11
+                self.mode.value = 3               #11 - not used 
             else:
-                self.mode = 'continous mode'    #10
+                self.mode.value = 2               #10 - continous mode 
         else:
             if is_nth_bit_set(integer, 8):
-                self.mode = 'burst mode'        #01
+                self.mode.value = 1               #01 - burst mode
             else:
-                self.mode = 'single shot'       #00
+                self.mode.value = 0               #00 - single shot
 
-        print(f'Mode set to: {self.mode}')
+        print(f'Mode set to: {self.mode.value}')
         
         self.on.value = is_nth_bit_set(integer, 7)
         print(f'Start sending = {self.on.value}')
@@ -71,21 +72,21 @@ class FpgaMockup:
                             (speed_testing_ip, speed_testing_udp_port))
 
     def sending(self, speed_testing_ip, speed_testing_udp_port):
-        if self.mode == "burst mode":
+        if self.mode.value == 1:
             print(f'Sending {self.number_of_test_packets.value} packets')
             for _ in range(self.number_of_test_packets.value):
                 self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
 
-        if self.mode == "single shot":
+        if self.mode.value == 0:
             print(f'Sending single packet')
             self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
 
-        if self.mode == "continous mode":
+        if self.mode.value == 2:
             print(f'Sending continous packets')
             while(True):
                 self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
 
-        if self.mode == "not used":
+        if self.mode.value == 3:
             print(f'Not sending packets')
 
 if __name__ == "__main__":
