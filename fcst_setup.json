@@ -1,0 +1,20 @@
+{
+    "fcst_ip": "127.0.0.2",
+    "fcst_port_in": 12666,
+    "fcst_port_out": 13666,
+    "fpga_ip": "127.0.0.1",
+    "start_datagram": {
+        "fpga_port": 12666,
+        "data": "0x80"
+    },
+    "setup_datagrams": [
+        {
+            "fpga_port": 14666,
+            "data_bin": "10"
+        },
+        {
+            "fpga_port": 15666,
+            "data": "0x5"
+        }
+    ]
+}
