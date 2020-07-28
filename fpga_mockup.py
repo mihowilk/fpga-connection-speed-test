@@ -66,11 +66,27 @@ class FpgaMockup:
         self.number_of_test_packets.value = int.from_bytes(data, 'big')
         print(f"Set number of packets to {self.number_of_test_packets.value}")
 
-    def sending(self, speed_testing_ip, speed_testing_udp_port):
-        print(f'Sending {self.number_of_test_packets.value} packets')
-        for _ in range(self.number_of_test_packets.value):
-            self.setup_sock_12666.sendto(b'Speed test package',
+    def send_packet(self, message, speed_testing_ip, speed_testing_udp_port):
+        self.setup_sock_12666.sendto(message,
                             (speed_testing_ip, speed_testing_udp_port))
+
+    def sending(self, speed_testing_ip, speed_testing_udp_port):
+        if self.mode == "burst mode":
+            print(f'Sending {self.number_of_test_packets.value} packets')
+            for _ in range(self.number_of_test_packets.value):
+                self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
+
+        if self.mode == "single shot":
+            print(f'Sending single packet')
+            self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
+
+        if self.mode == "continous mode":
+            print(f'Sending continous packets')
+            while(True):
+                self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
+
+        if self.mode == "not used":
+            print(f'Not sending packets')
 
 if __name__ == "__main__":
     testing_fpga = FpgaMockup(FPGA_IP)
@@ -88,3 +104,4 @@ if __name__ == "__main__":
         p3.join(1)
 
     testing_fpga.sending(SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT)
+    print("Finished sending.")
