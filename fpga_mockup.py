@@ -1,13 +1,17 @@
 import socket
 import multiprocessing
 
+FPGA_IP = '127.0.0.1'
+SPEED_TESTING_IP = '127.0.0.2'
+SPEED_TESTING_UDP_PORT = 5005
+
 def is_nth_bit_set(x: int, n: int):
     if x & (1 << n):
         return True
     return False
 
 class FpgaMockup:
-    def __init__(self, setup_ip = '127.0.0.1'):
+    def __init__(self, setup_ip):
         self.setup_ip = setup_ip
         self.setup_sock_12666 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.setup_sock_14666 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -38,7 +42,7 @@ class FpgaMockup:
                 self.mode = 'burst mode'        #01
             else:
                 self.mode = 'single shot'       #00
-                
+
         print(f'Mode set to: {self.mode}')
         
         self.on.value = is_nth_bit_set(integer, 7)
@@ -62,14 +66,14 @@ class FpgaMockup:
         self.number_of_test_packets.value = int.from_bytes(data, 'big')
         print(f"Set number of packets to {self.number_of_test_packets.value}")
 
-    def sending(self, speed_testing_ip = '127.0.0.2', speed_testing_udp_port = 5005):
+    def sending(self, speed_testing_ip, speed_testing_udp_port):
         print(f'Sending {self.number_of_test_packets.value} packets')
         for _ in range(self.number_of_test_packets.value):
             self.setup_sock_12666.sendto(b'Speed test package',
                             (speed_testing_ip, speed_testing_udp_port))
 
 if __name__ == "__main__":
-    testing_fpga = FpgaMockup()
+    testing_fpga = FpgaMockup(FPGA_IP)
     while(testing_fpga.on.value == False):
         p1 = multiprocessing.Process(target=testing_fpga.listening_on_12666)
         p2 = multiprocessing.Process(target=testing_fpga.listening_on_14666)
@@ -83,4 +87,4 @@ if __name__ == "__main__":
         p2.join(1)
         p3.join(1)
 
-    testing_fpga.sending()
+    testing_fpga.sending(SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT)
