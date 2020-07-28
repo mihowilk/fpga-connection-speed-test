@@ -5,10 +5,12 @@ FPGA_IP = '127.0.0.1'
 SPEED_TESTING_IP = '127.0.0.2'
 SPEED_TESTING_UDP_PORT = 5005
 
+
 def is_nth_bit_set(x: int, n: int):
     if x & (1 << n):
         return True
     return False
+
 
 class FpgaMockup:
     def __init__(self, setup_ip):
@@ -25,42 +27,43 @@ class FpgaMockup:
         self.number_of_test_packets = multiprocessing.Value('i', 10)
 
     def listening_on_12666(self):
-        print("Listening on 12666...")
+        # print("Listening on 12666...")
         data = self.setup_sock_12666.recvfrom(16)[0]
-        print("Finished Listening on 12666.")
+        # print("Finished Listening on 12666.")
 
         print(f'Received setup on port 12666, setup message: {data}')
         integer = int.from_bytes(data, 'big')
 
         if is_nth_bit_set(integer, 9):
             if is_nth_bit_set(integer, 8):
-                self.mode = 'not used'          #11
+                self.mode = 'not used'  # 11
             else:
-                self.mode = 'continous mode'    #10
+                self.mode = 'continous mode'  # 10
         else:
             if is_nth_bit_set(integer, 8):
-                self.mode = 'burst mode'        #01
+                self.mode = 'burst mode'  # 01
             else:
-                self.mode = 'single shot'       #00
+                self.mode = 'single shot'  # 00
 
         print(f'Mode set to: {self.mode}')
-        
+
         self.on.value = is_nth_bit_set(integer, 7)
-        print(f'Start sending = {self.on.value}')
+        if self.on.value == 1:
+            print('This is starting datagram')
 
     def listening_on_14666(self):
-        print("Listening on 14666...")
+        # print("Listening on 14666...")
         data = self.setup_sock_14666.recvfrom(16)[0]
-        print("Finished Listening on 14666.")
+        # print("Finished Listening on 14666.")
 
         print(f'Received setup on port 14666, setup message: {data}')
         self.padding.value = int.from_bytes(data, 'big')
         print(f"Set padding to {self.padding.value}")
 
     def listening_on_15666(self):
-        print("Listening on 15666...")
+        # print("Listening on 15666...")
         data = self.setup_sock_15666.recvfrom(64)[0]
-        print("Finished Listening on 15666.")
+        # print("Finished Listening on 15666.")
 
         print(f'Received setup on port 15666, setup message: {data}')
         self.number_of_test_packets.value = int.from_bytes(data, 'big')
@@ -68,7 +71,7 @@ class FpgaMockup:
 
     def send_packet(self, message, speed_testing_ip, speed_testing_udp_port):
         self.setup_sock_12666.sendto(message,
-                            (speed_testing_ip, speed_testing_udp_port))
+                                     (speed_testing_ip, speed_testing_udp_port))
 
     def sending(self, speed_testing_ip, speed_testing_udp_port):
         if self.mode == "burst mode":
@@ -82,15 +85,16 @@ class FpgaMockup:
 
         if self.mode == "continous mode":
             print(f'Sending continous packets')
-            while(True):
+            while (True):
                 self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
 
         if self.mode == "not used":
             print(f'Not sending packets')
 
+
 if __name__ == "__main__":
     testing_fpga = FpgaMockup(FPGA_IP)
-    while(testing_fpga.on.value == False):
+    while (testing_fpga.on.value == False):
         p1 = multiprocessing.Process(target=testing_fpga.listening_on_12666)
         p2 = multiprocessing.Process(target=testing_fpga.listening_on_14666)
         p3 = multiprocessing.Process(target=testing_fpga.listening_on_15666)
@@ -103,5 +107,6 @@ if __name__ == "__main__":
         p2.join(1)
         p3.join(1)
 
+    print('Beginning sending')
     testing_fpga.sending(SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT)
-    print("Finished sending.")
+    print("Finished sending")

@@ -1,24 +1,20 @@
 {
-    "fcst_ip": "127.0.0.2", 
-    "fcst_port": 12666, 
-    "fpga_ip": "127.0.0.1", 
+    "fcst_ip": "127.0.0.2",
+    "fcst_port_in": 12666,
+    "fcst_port_out": 13666,
+    "fpga_ip": "127.0.0.1",
+    "start_datagram": {
+        "fpga_port": 12666,
+        "data": "0x80"
+    },
     "setup_datagrams": [
         {
-            "data": "0000000000000001", 
-            "fpga_port": 12666
-        }, 
+            "fpga_port": 14666,
+            "data_bin": "10"
+        },
         {
-            "data": "0000000000000010", 
-            "fpga_port": 14666
-        }, 
-        {
-            "data": "0000000000000100", 
-            "fpga_port": 15666
-        }, 
-        {
-            "data": "0000000010000000", 
-            "fpga_port": 12666, 
-            "is_start_datagram": true
+            "fpga_port": 15666,
+            "data": "0x5"
         }
     ]
 }

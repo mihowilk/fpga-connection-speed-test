@@ -29,7 +29,7 @@ class FpgaConnectionSpeedTester:
 
     def start_test(self):
         if self.setup is not None:
-            print('Starting test.')
+            print('Starting test')
             self.sock_out.sendto(self.setup.start_datagram.data, self.setup.start_datagram.destination)
             self.listen()
         else:
