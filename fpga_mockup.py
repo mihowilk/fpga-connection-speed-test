@@ -1,6 +1,11 @@
 import socket
 import multiprocessing
 
+def is_nth_bit_set(x: int, n: int):
+    if x & (1 << n):
+        return True
+    return False
+
 class FpgaMockup:
     def __init__(self, setup_ip = '127.0.0.1'):
         self.setup_ip = setup_ip
@@ -11,7 +16,7 @@ class FpgaMockup:
         self.setup_sock_14666.bind((setup_ip, 14666))
         self.setup_sock_15666.bind((setup_ip, 15666))
         self.on = multiprocessing.Value('b', False)
-        self.mode = b'11'
+        self.mode = multiprocessing.Array('c', 16)
         self.padding = multiprocessing.Value('i', 0)
         self.number_of_test_packets = multiprocessing.Value('i', 10)
 
@@ -22,12 +27,22 @@ class FpgaMockup:
 
         print(f'Received setup on port 12666, setup message: {data}')
         integer = int.from_bytes(data, 'big')
-        bits = "{0:b}".format(integer)
-        print(bits)
-        self.mode = bits[-10:-8]            #[9:8]
+
+        if is_nth_bit_set(integer, 9):
+            if is_nth_bit_set(integer, 8):
+                self.mode = 'not used'          #11
+            else:
+                self.mode = 'continous mode'    #10
+        else:
+            if is_nth_bit_set(integer, 8):
+                self.mode = 'burst mode'        #01
+            else:
+                self.mode = 'single shot'       #00
+                
         print(f'Mode set to: {self.mode}')
-        print(bool(int(bits[-8:-7])))
-        self.on.value = bool(int(bits[-8:-7]))
+        
+        self.on.value = is_nth_bit_set(integer, 7)
+        print(f'Start sending = {self.on.value}')
 
     def listening_on_14666(self):
         print("Listening on 14666...")
