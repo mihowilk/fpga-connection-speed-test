@@ -1,5 +1,6 @@
 import socket
 import multiprocessing
+import time
 
 FPGA_IP = '127.0.0.1'
 SPEED_TESTING_IP = '127.0.0.2'
@@ -49,7 +50,7 @@ class FpgaMockup:
 
         self.on.value = is_nth_bit_set(integer, 7)
         if self.on.value == 1:
-            print('This is starting datagram')
+            print('Received starting datagram')
 
     def listening_on_14666(self):
         # print("Listening on 14666...")
@@ -74,22 +75,30 @@ class FpgaMockup:
                                      (speed_testing_ip, speed_testing_udp_port))
 
     def sending(self, speed_testing_ip, speed_testing_udp_port):
-        if self.mode == "burst mode":
-            print(f'Sending {self.number_of_test_packets.value} packets')
-            for _ in range(self.number_of_test_packets.value):
-                self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
-
-        if self.mode == "single shot":
-            print(f'Sending single packet')
-            self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
-
-        if self.mode == "continous mode":
-            print(f'Sending continous packets')
-            while (True):
-                self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
-
-        if self.mode == "not used":
-            print(f'Not sending packets')
+        # if self.mode == "burst mode":
+        #     print(f'Sending {self.number_of_test_packets.value} packets')
+        #     for _ in range(self.number_of_test_packets.value):
+        #         self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
+        #
+        # if self.mode == 'single shot':
+        #     print(f'Sending single packet')
+        #     self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
+        #
+        # if self.mode == "continous mode":
+        #     print(f'Sending continous packets')
+        #     while (True):
+        #         self.send_packet(b'Speed test package', speed_testing_ip, speed_testing_udp_port)
+        #
+        # if self.mode == "not used":
+        #     print(f'Not sending packets')
+        number_of_datagrams = 50000
+        start_time = time.time()
+        for i in range(0, number_of_datagrams):
+            data = i.to_bytes(8, byteorder='big')
+            padding = i.to_bytes(1016, byteorder='big')
+            self.send_packet(data + padding, speed_testing_ip, speed_testing_udp_port)
+        stop_time = time.time()
+        print(f'Sent {number_of_datagrams} in {stop_time - start_time} seconds')
 
 
 if __name__ == "__main__":
@@ -107,6 +116,6 @@ if __name__ == "__main__":
         p2.join(1)
         p3.join(1)
 
-    print('Beginning sending')
+    print(f'Beginning sending packets to {(SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT)}')
     testing_fpga.sending(SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT)
     print("Finished sending")
