@@ -10,20 +10,23 @@ class Controller:
     Setup datagrams and connection parameters are configured using json.
     """
 
-    def __init__(self):
-        self.setup = None
+    def __init__(self, setup_filename):
+        self.setup = self.load_setup(setup_filename)
         self.sock_out = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock_out.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock_out.bind((self.setup.fcst_ip, self.setup.fcst_port_out))
 
-    def load_setup(self, setup_filename):
+    @staticmethod
+    def load_setup(setup_filename):
         try:
             setup = SetupManager()
             setup.load_setup_from_file(setup_filename)
-            self.setup = setup
             print('Setup complete')
+            return setup
         except NotProperlyConfigured:
-            self.setup = None
+            setup = None
             print('Error occurred while loading configuration. Setup incomplete.')
+            return setup
 
     def start_test(self):
         if self.setup is not None:
@@ -54,7 +57,6 @@ class Controller:
 
 
 if __name__ == '__main__':
-    fcst = Controller()
-    fcst.load_setup('config.json')
+    fcst = Controller('config.json')
     fcst.send_setup_to_fpga()
     fcst.start_test()

@@ -24,6 +24,7 @@ class SpeedTest:
         self.sock.settimeout(1.0)
 
     def bind_socket_to_address(self, addr):
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(addr)
 
     def run(self):

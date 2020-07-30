@@ -3,7 +3,7 @@ import multiprocessing
 
 FPGA_IP = '127.0.0.1'
 SPEED_TESTING_IP = '127.0.0.2'
-SPEED_TESTING_UDP_PORT = 5005
+SPEED_TESTING_UDP_PORT = 12666
 PADDING_VALUE = b'\xd1'
 
 def is_nth_bit_set(x: int, n: int):
