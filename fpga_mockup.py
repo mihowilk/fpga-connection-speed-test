@@ -1,6 +1,5 @@
 import socket
 import multiprocessing
-import ctypes
 
 FPGA_IP = '127.0.0.1'
 SPEED_TESTING_IP = '127.0.0.2'
