@@ -2,6 +2,9 @@ import json
 
 
 class SetupManager:
+    """
+    FCST module responsible for preparing setup from configurable json file.
+    """
 
     def __init__(self):
         self.fpga_ip = None

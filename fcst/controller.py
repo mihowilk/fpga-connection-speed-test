@@ -6,8 +6,7 @@ from fcst.speed_test import SpeedTest
 
 class Controller:
     """
-    FPGA Connection Speed Tester. Measures raw data flow rate during transmission of UDP datagrams from FPGA.
-    Setup datagrams and connection parameters are configured using json.
+    FPGA Connection Speed Tester main module. Controller manages other FCST modules and prints messages to console.
     """
 
     def __init__(self, setup_filename):
@@ -32,15 +31,11 @@ class Controller:
         if self.setup is not None:
             print('Starting test')
             self.sock_out.sendto(self.setup.start_datagram.data, self.setup.start_datagram.destination)
-            self.listen_and_measure_speed()
+            self._listen_and_measure_speed()
         else:
             print('Cannot start test. Setup is incomplete.')
 
-    def send_setup_to_fpga(self):
-        for datagram in self.setup.setup_datagrams:
-            self.sock_out.sendto(datagram.data, datagram.destination)
-
-    def listen_and_measure_speed(self):
+    def _listen_and_measure_speed(self):
         speed_test = SpeedTest()
         speed_test.bind_socket_to_address((self.setup.fcst_ip, self.setup.fcst_port_in))
 
@@ -54,6 +49,10 @@ class Controller:
             print(f"Raw UDP packet throughput: {speed_test.udp_data_throughput} Mbps")
         else:
             print("Test not ended successfully")
+
+    def send_setup_to_fpga(self):
+        for datagram in self.setup.setup_datagrams:
+            self.sock_out.sendto(datagram.data, datagram.destination)
 
 
 if __name__ == '__main__':

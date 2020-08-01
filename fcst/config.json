@@ -10,11 +10,11 @@
     "setup_datagrams": [
         {
             "fpga_port": 14666,
-            "data": "0x5A"
+            "data": "0x4AA"
         },
         {
             "fpga_port": 15666,
-            "data": "0x86A"
+            "data": "0xC350"
         }
     ]
 }
