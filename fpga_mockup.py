@@ -1,8 +1,8 @@
 import socket
 import multiprocessing
 
-FPGA_IP = '127.0.0.1'
-SPEED_TESTING_IP = '127.0.0.2'
+FPGA_IP = '127.0.0.11'
+SPEED_TESTING_IP = '127.0.0.12'
 SPEED_TESTING_UDP_PORT = 12666
 PADDING_VALUE = b'\xd1'
 
