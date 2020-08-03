@@ -1,7 +1,8 @@
 import socket
+import argparse
 
-from fcst.setup_manager import SetupManager, NotProperlyConfigured
-from fcst.speed_test import SpeedTest
+from setup_manager import SetupManager, NotProperlyConfigured
+from speed_test import SpeedTest
 
 
 class Controller:
@@ -56,6 +57,10 @@ class Controller:
 
 
 if __name__ == '__main__':
-    fcst = Controller('config.json')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename", type=str,
+        help="name of json file")
+    args = parser.parse_args()
+    fcst = Controller(args.filename)
     fcst.send_setup_to_fpga()
     fcst.start_test()
