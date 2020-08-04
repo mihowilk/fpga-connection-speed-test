@@ -5,16 +5,16 @@
     "fpga_ip": "127.0.0.11",
     "start_datagram": {
         "fpga_port": 12666,
-        "data": "0x180"
+        "data_hex": "0x180"
     },
     "setup_datagrams": [
         {
             "fpga_port": 14666,
-            "data": "0x4AA"
+            "data_dec": "1400"
         },
         {
             "fpga_port": 15666,
-            "data": "0xC350"
+            "data_dec": "100000"
         }
     ]
 }

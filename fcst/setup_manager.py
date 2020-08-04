@@ -39,11 +39,14 @@ class SetupManager:
             self.setup_datagrams.append(setup_datagram)
 
     def make_datagram_from_predefined_data(self, predefined_datagram):  # TODO add whitespace characters ignoring
-        if 'data' in predefined_datagram:
-            return UdpDatagram(int(predefined_datagram['data'], 16).to_bytes(2, byteorder='big'),
+        if 'data_hex' in predefined_datagram:
+            return UdpDatagram(int(predefined_datagram['data_hex'], 16).to_bytes(10, byteorder='big'),
                                (self.fpga_ip, predefined_datagram['fpga_port']))
         if 'data_bin' in predefined_datagram:
-            return UdpDatagram(int(predefined_datagram['data_bin'], 2).to_bytes(2, byteorder='big'),
+            return UdpDatagram(int(predefined_datagram['data_bin'], 2).to_bytes(10, byteorder='big'),
+                               (self.fpga_ip, predefined_datagram['fpga_port']))
+        if 'data_dec' in predefined_datagram:
+            return UdpDatagram(int(predefined_datagram['data_dec'], 10).to_bytes(10, byteorder='big'),
                                (self.fpga_ip, predefined_datagram['fpga_port']))
 
     def is_properly_configured(self):
