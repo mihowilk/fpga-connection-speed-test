@@ -128,7 +128,7 @@ class SpeedTest:
         return logger
 
     def log_results(self):
-        self.logger.info(f"Succesfully ended test\n"
+        self.logger.info(f"Successfully ended test\n"
                          f"Transmitted {self.last_packet_counter - self.start_packet_counter + 1} packets\n"
                          f"Received {self.packets_received} packets in {self.time_elapsed} seconds\n"
                          f"Raw UDP packet data length: {self.udp_data_length} bytes\n"
