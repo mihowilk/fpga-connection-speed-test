@@ -42,15 +42,6 @@ class Controller:
 
         speed_test.run()
 
-        # if speed_test.successfully_ended:
-        #     print(f"Transmitted {speed_test.packets_transmitted} packets in {speed_test.time_elapsed} seconds")
-        #     print(f"Raw ethernet packet data length: {speed_test.eth_data_length} bytes")
-        #     print(f"Raw ethernet packet throughput: {speed_test.eth_throughput} Mbps")
-        #     print(f"Raw UDP packet data length: {speed_test.udp_data_length} bytes")
-        #     print(f"Raw UDP packet throughput: {speed_test.udp_data_throughput} Mbps")
-        # else:
-        #     print("Test not ended successfully")
-
     def send_setup_to_fpga(self):
         for datagram in self.setup.setup_datagrams:
             self.sock_out.sendto(datagram.data, datagram.destination)
@@ -59,7 +50,7 @@ class Controller:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", type=str,
-        help="name of json file")
+                        help="name of json file")
     args = parser.parse_args()
     fcst = Controller(args.filename)
     fcst.send_setup_to_fpga()
