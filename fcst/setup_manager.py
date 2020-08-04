@@ -1,49 +1,10 @@
-import socket
 import json
 
 
-class FpgaConnectionSpeedTester:
+class SetupManager:
     """
-    Or fcst for short. Measures raw data flow rate during transmission of UDP datagrams from FPGA. Setup datagrams
-    and connection parameters are configured using json.
+    FCST module responsible for preparing setup from configurable json file.
     """
-
-    def __init__(self, setup_filename):
-        self.setup = self.load_setup(setup_filename)
-        self.sock_in = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock_out = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock_in.bind((self.setup.fcst_ip, self.setup.fcst_port_in))
-        self.sock_out.bind((self.setup.fcst_ip, self.setup.fcst_port_out))
-
-    @staticmethod
-    def load_setup(setup_filename):
-        try:
-            setup = FcstSetup()
-            setup.load_setup_from_file(setup_filename)
-            print('Setup complete')
-            return setup
-        except NotProperlyConfigured:
-            setup = None
-            print('Error occurred while loading configuration. Setup incomplete.')
-            return setup
-
-    def start_test(self):
-        if self.setup is not None:
-            print('Starting test')
-            self.sock_out.sendto(self.setup.start_datagram.data, self.setup.start_datagram.destination)
-            self.listen()
-        else:
-            print('Cannot start test. Setup is incomplete.')
-
-    def send_setup_to_fpga(self):
-        for datagram in self.setup.setup_datagrams:
-            self.sock_out.sendto(datagram.data, datagram.destination)
-
-    def listen(self):
-        pass
-
-
-class FcstSetup:
 
     def __init__(self):
         self.fpga_ip = None
@@ -77,12 +38,15 @@ class FcstSetup:
             setup_datagram = self.make_datagram_from_predefined_data(predefined_datagram)
             self.setup_datagrams.append(setup_datagram)
 
-    def make_datagram_from_predefined_data(self, predefined_datagram):
-        if 'data' in predefined_datagram:
-            return UdpDatagram(int(predefined_datagram['data'], 16).to_bytes(2, byteorder='big'),
+    def make_datagram_from_predefined_data(self, predefined_datagram):  # TODO add whitespace characters ignoring
+        if 'data_hex' in predefined_datagram:
+            return UdpDatagram(int(predefined_datagram['data_hex'], 16).to_bytes(10, byteorder='big'),
                                (self.fpga_ip, predefined_datagram['fpga_port']))
         if 'data_bin' in predefined_datagram:
-            return UdpDatagram(int(predefined_datagram['data_bin'], 2).to_bytes(2, byteorder='big'),
+            return UdpDatagram(int(predefined_datagram['data_bin'], 2).to_bytes(10, byteorder='big'),
+                               (self.fpga_ip, predefined_datagram['fpga_port']))
+        if 'data_dec' in predefined_datagram:
+            return UdpDatagram(int(predefined_datagram['data_dec'], 10).to_bytes(10, byteorder='big'),
                                (self.fpga_ip, predefined_datagram['fpga_port']))
 
     def is_properly_configured(self):
@@ -92,18 +56,12 @@ class FcstSetup:
         return False
 
 
+class NotProperlyConfigured(Exception):
+    pass
+
+
 class UdpDatagram:
 
     def __init__(self, data, destination):
         self.data = data
         self.destination = destination
-
-
-class NotProperlyConfigured(Exception):
-    pass
-
-
-if __name__ == '__main__':
-    fcst = FpgaConnectionSpeedTester('fcst_setup.json')
-    fcst.send_setup_to_fpga()
-    fcst.start_test()
