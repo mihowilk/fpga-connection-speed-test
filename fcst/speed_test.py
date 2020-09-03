@@ -8,9 +8,6 @@ from datetime import datetime
 
 
 class SpeedTest:
-    """
-    FCST module responsible for receiving packets from FPGA, measuring raw data flow rate, and logging it.
-    """
 
     def __init__(self):
         self.start_time = None
@@ -88,7 +85,7 @@ class SpeedTest:
         return int(data.hex()[:16], 16)
 
     @staticmethod
-    def setup_logger(result_filename=f"results/results_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}.json"):
+    def setup_logger(result_filename=f"results/results_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}.log"):
 
         if not os.path.exists('results'):
             os.mkdir('results')
