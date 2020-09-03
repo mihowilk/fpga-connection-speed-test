@@ -2,11 +2,11 @@
 Or FCST for short. Application for testing connection with FPGA device through ethernet and UDP packets. It measures speed of raw data sent by 
 FPGA. Connection parameters like ip addresses, ports and setup datagrams are configured through json file. 
 
-###How to use FCST
+### How to use FCST
 1. Create json configuration file. How to do it is described in section above - JSON configuration file.
 2. Run fcst_console_ui.py with config file name as command line parameter.
 
-###JSON configuration file
+### JSON configuration file
 Configuration file is in form of dictionary, which contains following elements:
 - fcst_ip: string
 - fcst_port_in: int
@@ -20,26 +20,26 @@ datagram_t is dictionary that contains following elements:
 - data_hex: string OR data_dec: string OR data_bin: string
 
 
-####fcst_ip
+#### fcst_ip
 This string contains IP address for FCST application.
 
-####fcst_port_in
+#### fcst_port_in
 This int contains port on which FCST application will listen for test datagrams from FPGA.
 
-####fcst_port_out
+#### fcst_port_out
 This int contains port from which FCST application will send setup datagrams to FPGA.
 
-####fpga_ip
+#### fpga_ip
 This string contains IP address that FPGA has.
 
-####start_datagram
+#### start_datagram
 This element contains info about start datagram. When FPGA receives start datagram it begins sending test datagrams and 
 test starts.
 
-####setup_datagrams
+#### setup_datagrams
 This list contains info about datagrams that will be sent before starting the test.
 
-####Example
+#### Example
 config.json
 ```json
 {
@@ -64,18 +64,18 @@ config.json
 }
 ```
 
-###Project Structure
+### Project Structure
 Project consists of one folder and two files:
 - fcst folder
 - fcst_console_ui.py
 - fpga_mockup.py
 
-####fcst folder
+#### fcst folder
 It contains all modules for FCST. main.py contains all methods needed for performing whole test, but it does not 
 provide any user interface.
 
-####fcst_console_ui.py
+#### fcst_console_ui.py
 Provides user interface for main.py.
 
-####fpga_mockup.py
+#### fpga_mockup.py
 Substitution for real FPGA. It imitates its responses.
