@@ -5,7 +5,7 @@ from setup_manager import SetupManager, NotProperlyConfigured
 from speed_test import SpeedTest
 
 
-class Controller:
+class Main:
     """
     FPGA Connection Speed Tester main module. Controller manages other FCST modules and prints messages to console.
     """
@@ -52,6 +52,6 @@ if __name__ == '__main__':
     parser.add_argument("filename", type=str,
                         help="name of json file")
     args = parser.parse_args()
-    fcst = Controller(args.filename)
+    fcst = Main(args.filename)
     fcst.send_setup_to_fpga()
     fcst.start_test()
