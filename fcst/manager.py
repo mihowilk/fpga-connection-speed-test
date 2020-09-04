@@ -14,11 +14,10 @@ class Manager:
 
     def start_test(self):
         if self.setup is not None:
-            print('Starting test')
             self.sock_out.sendto(self.setup.start_datagram.data, self.setup.start_datagram.destination)
             self._listen_and_measure_speed()
         else:
-            print('Cannot start test. Setup is incomplete.')
+            raise IncompleteSetup
 
     def send_setup_to_fpga(self):
         for datagram in self.setup.setup_datagrams:
@@ -42,6 +41,7 @@ class Manager:
             print('Error occurred while loading configuration. Setup incomplete.')
             return setup
 
+
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser()
 #     parser.add_argument("filename", type=str,
@@ -50,3 +50,6 @@ class Manager:
 #     fcst = Main(args.filename)
 #     fcst.send_setup_to_fpga()
 #     fcst.start_test()
+
+class IncompleteSetup(Exception):
+    pass
