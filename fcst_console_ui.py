@@ -3,10 +3,10 @@ import argparse
 from fcst.manager import *
 
 
-def start_test(man):
+def start_test():
     try:
         print("Starting test...")
-        man.start_test()
+        manager.start_test()
     except IncompleteSetup:
         print("[error] Cannot start test. Setup is incomplete.")
 
@@ -19,11 +19,20 @@ def parse_arguments():
     return arguments
 
 
+def load_setup():
+    try:
+        manager.load_setup(args.filename)
+        print("Setup complete")
+    except NotProperlyConfigured:
+        print('Error occurred while loading configuration. Setup incomplete.')
+
+
 if __name__ == '__main__':
     args = parse_arguments()
 
-    manager = Manager(args.filename)
+    manager = Manager()
+    load_setup()
+    manager.prepare_socket()  # todo remove
     manager.send_setup_to_fpga()
 
-    start_test(manager)
-
+    start_test()
