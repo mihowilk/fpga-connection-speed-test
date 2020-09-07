@@ -57,7 +57,6 @@ if __name__ == '__main__':
     manager = Manager()
     setup_logger()
     load_setup()
-    manager.prepare_socket()  # todo remove
     manager.send_setup_to_fpga()
 
     start_test()
