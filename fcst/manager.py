@@ -11,6 +11,8 @@ class Manager:
         self.setup = None
         self.sock_out = None
 
+        self.logger = Logger()
+
     def load_setup(self, setup_filename):
         try:
             self.setup = Setup()
@@ -31,8 +33,7 @@ class Manager:
             raise IncompleteSetup
 
     def _listen_and_measure_speed(self):
-        logger = Logger()
-        speed_test = SpeedTest(logger)
+        speed_test = SpeedTest(self.logger)
         speed_test.bind_socket_to_address((self.setup.fcst_ip, self.setup.fcst_port_in))
 
         speed_test.run()
