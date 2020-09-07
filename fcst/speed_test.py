@@ -4,7 +4,7 @@ import time
 
 class SpeedTest:
 
-    def __init__(self, logger):
+    def __init__(self, logger, connection):
         self.start_time = None
         self.start_packet_counter = None
         self.udp_data_length = None
@@ -21,13 +21,7 @@ class SpeedTest:
         self.snapshot_offset = 1000
 
         self.logger = logger
-
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.settimeout(1.0)
-
-    def bind_socket_to_address(self, addr):
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind(addr)
+        self.connection = connection
 
     def run(self):
         self.receive_start_packet()
@@ -38,14 +32,14 @@ class SpeedTest:
         while ongoing and self.successfully_ended is not False:
             self.packets_received += 1
             try:
-                data = self.sock.recv(16)
+                data = self.connection.rec_from_fpga(buffer_size=16)
                 self.last_packet_counter = self.extract_packet_counter(data)
                 current_time = time.time()
                 self.last_packet_delta_time = current_time - self.start_time
 
                 if self.packets_received % self.snapshot_offset == 0:
                     self.logger.snapshot(self.last_packet_delta_time, self.last_packet_counter)
-            except socket.timeout:
+            except socket.timeout:  # todo change to not socket exception
                 ongoing = False
                 self.calculate_result_parameters()
                 self.successfully_ended = True
@@ -54,17 +48,15 @@ class SpeedTest:
                                                self.time_elapsed, self.udp_data_length, self.udp_data_throughput)
         if self.successfully_ended is False:
             raise Exception  # todo make relevant exception
-            # self.logger.error('Test not ended successfully')
-            # self.csv_logger.error('Test not ended successfully')
 
     def receive_start_packet(self):
         try:
-            data = self.sock.recv(1500)
+            data = self.connection.rec_from_fpga(buffer_size=1500)
             self.packets_received += 1
             self.start_time = time.time()
             self.start_packet_counter = self.extract_packet_counter(data)
             self.udp_data_length = len(data)
-        except socket.timeout:
+        except socket.timeout:  # todo change to not socket exception
             self.successfully_ended = False
 
     def calculate_result_parameters(self):
