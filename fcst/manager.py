@@ -2,6 +2,7 @@ import socket
 
 from setup import Setup, NotProperlyConfigured
 from speed_test import SpeedTest
+from logger import Logger
 
 
 class Manager:
@@ -30,7 +31,8 @@ class Manager:
             raise IncompleteSetup
 
     def _listen_and_measure_speed(self):
-        speed_test = SpeedTest()
+        logger = Logger()
+        speed_test = SpeedTest(logger)
         speed_test.bind_socket_to_address((self.setup.fcst_ip, self.setup.fcst_port_in))
 
         speed_test.run()
