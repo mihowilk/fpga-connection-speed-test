@@ -1,7 +1,7 @@
 import json
 
 
-class SetupManager:
+class Setup:
 
     def __init__(self):
         self.fpga_ip = None
@@ -11,7 +11,7 @@ class SetupManager:
         self.start_datagram = None
         self.setup_datagrams = None
 
-    def load_setup_from_file(self, setup_filename):
+    def load_from_file(self, setup_filename):
         with open(setup_filename, 'r') as read_file:
             predefined_setup = json.load(read_file)
         self.load_general_setup(predefined_setup)

@@ -1,6 +1,6 @@
 import socket
 
-from setup_manager import SetupManager, NotProperlyConfigured
+from setup import Setup, NotProperlyConfigured
 from speed_test import SpeedTest
 
 
@@ -12,8 +12,8 @@ class Manager:
 
     def load_setup(self, setup_filename):
         try:
-            self.setup = SetupManager()
-            self.setup.load_setup_from_file(setup_filename)
+            self.setup = Setup()
+            self.setup.load_from_file(setup_filename)
         except NotProperlyConfigured:
             self.setup = None
             raise NotProperlyConfigured from NotProperlyConfigured
