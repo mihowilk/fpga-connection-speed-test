@@ -1,135 +1,69 @@
 import socket
 import time
-import logging
-import sys
-import os
 
-from datetime import datetime
+from .exceptions import NoPacketsReceived
 
 
 class SpeedTest:
-    """
-    FCST module responsible for receiving packets from FPGA, measuring raw data flow rate, and logging it.
-    """
 
-    def __init__(self):
+    def __init__(self, logger, connection):
         self.start_time = None
-        self.start_packet_counter = None
-        self.udp_data_length = None
-        self.eth_data_length = None
+        self.first_packet_counter = None
+        self.latest_packet_counter = None
+        self.latest_packet_delta_time = None
 
-        self.udp_data_throughput = None
-        self.eth_throughput = None
-        self.time_elapsed = None
-        self.packets_received = 0
-
-        self.last_packet_counter = None
-        self.last_packet_delta_time = None
         self.successfully_ended = None
         self.snapshot_offset = 1000
 
-        self.logger = self.setup_logger()
-        self.csv_logger = self.setup_csv_logger()
-
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.settimeout(1.0)
-
-    def bind_socket_to_address(self, addr):
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind(addr)
+        self.logger = logger
+        self.connection = connection
 
     def run(self):
-        self.receive_start_packet()
-        self.listen_and_snapshot()
+        self._receive_first_packet()
+        self._listen_and_snapshot()
 
-    def listen_and_snapshot(self):
+    def _receive_first_packet(self):
+        try:
+            data = self.connection.rec_from_fpga(buffer_size=1500)
+            ResultParameters.packets_received += 1
+            self.start_time = time.time()
+            self.latest_packet_delta_time = 0
+            self.first_packet_counter = self.latest_packet_counter = self._extract_packet_counter(data)
+            ResultParameters.udp_data_length = len(data)
+        except socket.timeout:
+            raise NoPacketsReceived
+
+    def _listen_and_snapshot(self):
         ongoing = True
-        while ongoing and self.successfully_ended is not False:
-            self.packets_received += 1
+        while ongoing:
             try:
-                data = self.sock.recv(16)
-                self.last_packet_counter = self.extract_packet_counter(data)
-                current_time = time.time()
-                self.last_packet_delta_time = current_time - self.start_time
-
-                if self.packets_received % self.snapshot_offset == 0:
-                    self.log_snapshot()
+                data = self.connection.rec_from_fpga(buffer_size=16)
+                ResultParameters.packets_received += 1
+                self.latest_packet_counter = self._extract_packet_counter(data)
+                self.latest_packet_delta_time = time.time() - self.start_time
+                self.logger.snapshot(self.latest_packet_delta_time, self.latest_packet_counter)
             except socket.timeout:
                 ongoing = False
-                self.calculate_result_parameters()
-                self.successfully_ended = True
-                self.log_results()
-        if self.successfully_ended is False:
-            self.logger.error('Test not ended successfully')
-            self.csv_logger.error('Test not ended successfully')
+                self._calculate_result_parameters()
+                self.logger.successfully_ended()
 
-    def receive_start_packet(self):
-        try:
-            data = self.sock.recv(1500)
-            self.packets_received += 1
-            self.start_time = time.time()
-            self.start_packet_counter = self.extract_packet_counter(data)
-            self.udp_data_length = len(data)
-        except socket.timeout:
-            self.successfully_ended = False
-
-    def calculate_result_parameters(self):
-        self.packets_received = self.last_packet_counter - self.start_packet_counter
-        self.time_elapsed = self.last_packet_delta_time
-        counter_difference = self.last_packet_counter - self.start_packet_counter
-        self.udp_data_throughput = self.udp_data_length * 8 * counter_difference / self.last_packet_delta_time / 1e6
-
-    def log_snapshot(self):
-        self.logger.info(f'Delta time: {self.last_packet_delta_time}; Current counter: {self.last_packet_counter}')
-        self.csv_logger.info(f'{self.last_packet_delta_time},{self.last_packet_counter}')
+    def _calculate_result_parameters(self):
+        ResultParameters.packets_transmitted = self.latest_packet_counter - (self.first_packet_counter - 1)
+        ResultParameters.time_elapsed = self.latest_packet_delta_time
+        if ResultParameters.time_elapsed == 0:
+            ResultParameters.udp_data_throughput = 0
+        else:
+            counter_difference = self.latest_packet_counter - self.first_packet_counter
+            ResultParameters.udp_data_throughput = ResultParameters.udp_data_length * 8 * counter_difference / ResultParameters.time_elapsed / 1e6
 
     @staticmethod
-    def extract_packet_counter(data):
+    def _extract_packet_counter(data):
         return int(data.hex()[:16], 16)
 
-    @staticmethod
-    def setup_logger(result_filename=f"results/results_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}.json"):
 
-        if not os.path.exists('results'):
-            os.mkdir('results')
-
-        logger = logging.getLogger("speed_test_logger")
-        logger.setLevel(logging.DEBUG)
-        log_formatter = logging.Formatter("%(asctime)s "
-                                          "[%(levelname)s] %(message)s")
-
-        file_handler = logging.FileHandler(result_filename, mode="w")
-        file_handler.setFormatter(log_formatter)
-        file_handler.setLevel(logging.DEBUG)
-        logger.addHandler(file_handler)
-
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(log_formatter)
-        console_handler.setLevel(logging.DEBUG)
-        logger.addHandler(console_handler)
-
-        return logger
-
-    @staticmethod
-    def setup_csv_logger(result_filename=f"results/results_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}.csv"):
-
-        if not os.path.exists('results'):
-            os.mkdir('results')
-
-        logger = logging.getLogger("csv_results_logger")
-        logger.setLevel(logging.DEBUG)
-        log_formatter = logging.Formatter("%(message)s")
-
-        file_handler = logging.FileHandler(result_filename, mode="w")
-        file_handler.setFormatter(log_formatter)
-        file_handler.setLevel(logging.DEBUG)
-        logger.addHandler(file_handler)
-
-        return logger
-
-    def log_results(self):
-        self.logger.info(f"Successfully ended test\n"
-                         f"Transmitted {self.last_packet_counter - self.start_packet_counter + 1} packets\n"
-                         f"Received {self.packets_received} packets in {self.time_elapsed} seconds\n"
-                         f"Raw UDP packet data length: {self.udp_data_length} bytes\n"
-                         f"Raw UDP packet throughput: {self.udp_data_throughput} Mbps")
+class ResultParameters:
+    packets_transmitted = None
+    packets_received = 0
+    time_elapsed = None
+    udp_data_length = None
+    udp_data_throughput = None
