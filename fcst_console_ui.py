@@ -3,7 +3,7 @@ from datetime import datetime
 import sys
 import logging
 
-from fcst.manager import *
+from fcst.manager import Manager
 from exceptions import *
 
 

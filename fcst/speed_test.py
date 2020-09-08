@@ -27,7 +27,8 @@ class SpeedTest:
             data = self.connection.rec_from_fpga(buffer_size=1500)
             ResultParameters.packets_received += 1
             self.start_time = time.time()
-            self.first_packet_counter = self._extract_packet_counter(data)
+            self.latest_packet_delta_time = 0
+            self.first_packet_counter = self.latest_packet_counter = self._extract_packet_counter(data)
             ResultParameters.udp_data_length = len(data)
         except socket.timeout:
             raise NoPacketsReceived
@@ -49,8 +50,11 @@ class SpeedTest:
     def _calculate_result_parameters(self):
         ResultParameters.packets_transmitted = self.latest_packet_counter - (self.first_packet_counter - 1)
         ResultParameters.time_elapsed = self.latest_packet_delta_time
-        counter_difference = self.latest_packet_counter - self.first_packet_counter
-        ResultParameters.udp_data_throughput = ResultParameters.udp_data_length * 8 * counter_difference / ResultParameters.time_elapsed / 1e6
+        if ResultParameters.time_elapsed == 0:
+            ResultParameters.udp_data_throughput = 0
+        else:
+            counter_difference = self.latest_packet_counter - self.first_packet_counter
+            ResultParameters.udp_data_throughput = ResultParameters.udp_data_length * 8 * counter_difference / ResultParameters.time_elapsed / 1e6
 
     @staticmethod
     def _extract_packet_counter(data):
