@@ -4,6 +4,7 @@ import sys
 import logging
 
 from fcst.manager import *
+from exceptions import *
 
 
 def start_test():
@@ -12,6 +13,7 @@ def start_test():
         manager.start_test()
     except IncompleteSetup:
         print("[error] Cannot start test. Setup is incomplete.")
+        exit(1)
 
 
 def setup_logger():
@@ -47,8 +49,16 @@ def load_setup():
     try:
         manager.load_setup(args.filename)
         print("Setup complete")
-    except NotProperlyConfigured:
-        print('Error occurred while loading configuration. Setup incomplete.')
+    except GeneralSetupError:
+        print('[Error] Wrong general connection parameters (like ip addreses and ports) given in config file. Setup '
+              'incomplete.')
+        exit(1)
+    except SetupDatagramError:
+        print('[Error] Wrong or none setup datagram list given in config file. Setup incomplete.')
+        exit(1)
+    except StartDatagramError:
+        print('[Error] Wrong or none start datagram is given in config file. Setup incomplete.')
+        exit(1)
 
 
 if __name__ == '__main__':
