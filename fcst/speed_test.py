@@ -1,7 +1,7 @@
 import socket
 import time
 
-from exceptions import NoPacketsReceived
+from .exceptions import NoPacketsReceived
 
 
 class SpeedTest:

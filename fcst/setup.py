@@ -1,6 +1,6 @@
 import json
 
-from exceptions import *
+from .exceptions import *
 
 
 class Setup:

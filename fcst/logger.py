@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime
 
-from speed_test import ResultParameters
+from .speed_test import ResultParameters
 
 
 class Logger:

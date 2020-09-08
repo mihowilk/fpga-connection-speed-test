@@ -4,7 +4,7 @@ import sys
 import logging
 
 from fcst.manager import Manager
-from exceptions import *
+from fcst.exceptions import *
 
 
 def start_test():

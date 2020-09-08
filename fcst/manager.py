@@ -1,8 +1,8 @@
-from setup import Setup
-from speed_test import SpeedTest
-from logger import Logger
-from connection import Connection
-from exceptions import IncompleteSetup
+from .setup import Setup
+from .speed_test import SpeedTest
+from .logger import Logger
+from .connection import Connection
+from .exceptions import IncompleteSetup
 
 
 class Manager:
