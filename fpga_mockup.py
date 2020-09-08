@@ -11,16 +11,6 @@ def is_nth_bit_set(x: int, n: int):
         return True
     return False
 
-def int64_to_bytes(count):
-    """Converts an integer to a 64-bit bytes object.
-
-    :count: Any integer which is less than 64-bit of length.
-    :returns: bytes object for the integer given.
-
-    """
-    hex_count = f"{count:016x}"
-    return bytes.fromhex(hex_count)
-
 class FpgaMockup:
     def __init__(self, setup_ip):
         self.setup_ip = setup_ip
@@ -82,22 +72,22 @@ class FpgaMockup:
                             (speed_testing_ip, speed_testing_udp_port))
 
     def sending(self, speed_testing_ip, speed_testing_udp_port):
-        print(int64_to_bytes(0)+PADDING_VALUE*self.padding.value)
+        
         if self.mode.value == 1:
             print(f'Sending {self.number_of_test_packets.value} packets')
             for i in range(self.number_of_test_packets.value):
-                self.send_packet(int64_to_bytes(i)+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
+                self.send_packet((i+1).to_bytes(8, "big")+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
 
         if self.mode.value == 0:
             print(f'Sending single packet')
-            self.send_packet(int64_to_bytes(0)+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
+            self.send_packet(int(1).to_bytes(8, "big")+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
 
         if self.mode.value == 2:
             print(f'Sending continous packets')
-            i=0
+            counter = 1
             while(True):
-                self.send_packet(int64_to_bytes(i)+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
-                i+=1
+                self.send_packet(counter.to_bytes(8, "big")+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
+                counter += 1
 
         if self.mode.value == 3:
             print(f'Not sending packets')
