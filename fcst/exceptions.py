@@ -16,3 +16,7 @@ class StartDatagramError(Exception):
 
 class GeneralSetupError(Exception):
     pass
+
+
+class NoPacketsReceived(Exception):
+    pass

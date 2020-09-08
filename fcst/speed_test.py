@@ -1,22 +1,23 @@
 import socket
 import time
 
+from exceptions import NoPacketsReceived
+
 
 class SpeedTest:
 
     def __init__(self, logger, connection):
         self.start_time = None
-        self.start_packet_counter = None
-        self.udp_data_length = None
-        self.eth_data_length = None
+        self.first_packet_counter = None
+        self.latest_packet_counter = None
+        self.latest_packet_delta_time = None
 
-        self.udp_data_throughput = None
-        self.eth_throughput = None
-        self.time_elapsed = None
+        self.packets_transmitted = None
         self.packets_received = 0
+        self.time_elapsed = None
+        self.udp_data_length = None
+        self.udp_data_throughput = None
 
-        self.last_packet_counter = None
-        self.last_packet_delta_time = None
         self.successfully_ended = None
         self.snapshot_offset = 1000
 
@@ -24,47 +25,41 @@ class SpeedTest:
         self.connection = connection
 
     def run(self):
-        self.receive_start_packet()
-        self.listen_and_snapshot()
+        self._receive_first_packet()
+        self._listen_and_snapshot()
 
-    def listen_and_snapshot(self):
-        ongoing = True
-        while ongoing and self.successfully_ended is not False:
-            self.packets_received += 1
-            try:
-                data = self.connection.rec_from_fpga(buffer_size=16)
-                self.last_packet_counter = self.extract_packet_counter(data)
-                current_time = time.time()
-                self.last_packet_delta_time = current_time - self.start_time
-
-                if self.packets_received % self.snapshot_offset == 0:
-                    self.logger.snapshot(self.last_packet_delta_time, self.last_packet_counter)
-            except socket.timeout:  # todo change to not socket exception
-                ongoing = False
-                self.calculate_result_parameters()
-                self.successfully_ended = True
-                self.logger.successfully_ended(self.start_packet_counter, self.last_packet_counter,
-                                               self.packets_received,
-                                               self.time_elapsed, self.udp_data_length, self.udp_data_throughput)
-        if self.successfully_ended is False:
-            raise Exception  # todo make relevant exception
-
-    def receive_start_packet(self):
+    def _receive_first_packet(self):
         try:
             data = self.connection.rec_from_fpga(buffer_size=1500)
             self.packets_received += 1
             self.start_time = time.time()
-            self.start_packet_counter = self.extract_packet_counter(data)
+            self.first_packet_counter = self._extract_packet_counter(data)
             self.udp_data_length = len(data)
-        except socket.timeout:  # todo change to not socket exception
-            self.successfully_ended = False
+        except socket.timeout:
+            raise NoPacketsReceived
+
+    def _listen_and_snapshot(self):
+        ongoing = True
+        while ongoing:
+            try:
+                data = self.connection.rec_from_fpga(buffer_size=16)
+                self.packets_received += 1
+                self.latest_packet_counter = self._extract_packet_counter(data)
+                self.latest_packet_delta_time = time.time() - self.start_time
+                self.logger.snapshot(self.latest_packet_delta_time, self.latest_packet_counter, self.packets_received)
+            except socket.timeout:
+                ongoing = False
+                self.calculate_result_parameters()
+                self.logger.successfully_ended(self.packets_transmitted,
+                                               self.packets_received,
+                                               self.time_elapsed, self.udp_data_length, self.udp_data_throughput)
 
     def calculate_result_parameters(self):
-        self.packets_received = self.last_packet_counter - self.start_packet_counter
-        self.time_elapsed = self.last_packet_delta_time
-        counter_difference = self.last_packet_counter - self.start_packet_counter
-        self.udp_data_throughput = self.udp_data_length * 8 * counter_difference / self.last_packet_delta_time / 1e6
+        self.packets_transmitted = self.latest_packet_counter - (self.first_packet_counter - 1)
+        self.time_elapsed = self.latest_packet_delta_time
+        counter_difference = self.latest_packet_counter - self.first_packet_counter
+        self.udp_data_throughput = self.udp_data_length * 8 * counter_difference / self.latest_packet_delta_time / 1e6
 
     @staticmethod
-    def extract_packet_counter(data):
+    def _extract_packet_counter(data):
         return int(data.hex()[:16], 16)

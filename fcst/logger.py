@@ -8,6 +8,7 @@ class Logger:
     def __init__(self):
         self.logger = Logger.setup_logger()
         self.csv_logger = Logger.setup_csv_logger()
+        self.snapshot_interval = 1
 
     @staticmethod
     def setup_logger():
@@ -36,15 +37,15 @@ class Logger:
 
         return logger
 
-    def snapshot(self, last_packet_delta_time, last_packet_counter):
-        self.logger.info(f'Delta time: {last_packet_delta_time}; Current counter: {last_packet_counter}')
-        self.csv_logger.info(f'{last_packet_delta_time},{last_packet_counter}')
+    def snapshot(self, last_packet_delta_time, last_packet_counter, packet_number):
+        if packet_number % self.snapshot_interval == 0:
+            self.logger.info(f'Delta time: {last_packet_delta_time}; Current counter: {last_packet_counter}')
+            self.csv_logger.info(f'{last_packet_delta_time},{last_packet_counter}')
 
-    def successfully_ended(self, first_packet_counter, last_packet_counter, packets_received, time_elapsed,
-                           udp_data_length,
-                           udp_data_throughput):
+    def successfully_ended(self, packets_transmitted, packets_received,
+                           time_elapsed, udp_data_length, udp_data_throughput):
         self.logger.info(f"Successfully ended test\n"
-                         f"Transmitted {last_packet_counter - (first_packet_counter - 1)} packets\n"
+                         f"Transmitted {packets_transmitted} packets\n"
                          f"Received {packets_received} packets in {time_elapsed} seconds\n"
                          f"Raw UDP packet data length: {udp_data_length} bytes\n"
                          f"Raw UDP packet throughput: {udp_data_throughput} Mbps")

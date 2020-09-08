@@ -12,11 +12,16 @@ def start_test():
         print("Starting test...")
         manager.start_test()
     except IncompleteSetup:
-        print("[error] Cannot start test. Setup is incomplete.")
+        print("[Error] Cannot start test. Setup is incomplete.")
+        exit(1)
+    except NoPacketsReceived:
+        print('[Error] No packets were received.')
         exit(1)
 
 
 def setup_logger():
+    manager.logger.snapshot_interval = 5000
+
     result_filename = f"results/results_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}.log"
 
     logger = logging.getLogger("speed_test_logger")
