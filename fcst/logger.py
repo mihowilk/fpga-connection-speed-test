@@ -2,6 +2,8 @@ import logging
 import os
 from datetime import datetime
 
+from speed_test import ResultParameters
+
 
 class Logger:
 
@@ -37,15 +39,14 @@ class Logger:
 
         return logger
 
-    def snapshot(self, last_packet_delta_time, last_packet_counter, packet_number):
-        if packet_number % self.snapshot_interval == 0:
+    def snapshot(self, last_packet_delta_time, last_packet_counter):
+        if ResultParameters.packets_received % self.snapshot_interval == 0:
             self.logger.info(f'Delta time: {last_packet_delta_time}; Current counter: {last_packet_counter}')
             self.csv_logger.info(f'{last_packet_delta_time},{last_packet_counter}')
 
-    def successfully_ended(self, packets_transmitted, packets_received,
-                           time_elapsed, udp_data_length, udp_data_throughput):
+    def successfully_ended(self):
         self.logger.info(f"Successfully ended test\n"
-                         f"Transmitted {packets_transmitted} packets\n"
-                         f"Received {packets_received} packets in {time_elapsed} seconds\n"
-                         f"Raw UDP packet data length: {udp_data_length} bytes\n"
-                         f"Raw UDP packet throughput: {udp_data_throughput} Mbps")
+                         f"Transmitted {ResultParameters.packets_transmitted} packets\n"
+                         f"Received {ResultParameters.packets_received} packets in {ResultParameters.time_elapsed} seconds\n"
+                         f"Raw UDP packet data length: {ResultParameters.udp_data_length} bytes\n"
+                         f"Raw UDP packet throughput: {ResultParameters.udp_data_throughput} Mbps")

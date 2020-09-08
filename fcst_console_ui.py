@@ -55,7 +55,7 @@ def load_setup():
         manager.load_setup(args.filename)
         print("Setup complete")
     except GeneralSetupError:
-        print('[Error] Wrong general connection parameters (like ip addreses and ports) given in config file. Setup '
+        print('[Error] Wrong general connection parameters (like ip addresses and ports) given in config file. Setup '
               'incomplete.')
         exit(1)
     except SetupDatagramError:
