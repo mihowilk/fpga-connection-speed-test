@@ -54,6 +54,9 @@ def load_setup():
     try:
         manager.load_setup(args.filename)
         print("Setup complete")
+    except FileNotFoundError:
+        print('[Error] Wrong file name for configuration file.')
+        exit(1)
     except GeneralSetupError:
         print('[Error] Wrong general connection parameters (like ip addresses and ports) given in config file. Setup '
               'incomplete.')

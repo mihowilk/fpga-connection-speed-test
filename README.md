@@ -6,6 +6,11 @@ FPGA. Connection parameters like ip addresses, ports and setup datagrams are con
 1. Create json configuration file. How to do it is described in section above - JSON configuration file.
 2. Run fcst_console_ui.py with config file name as command line parameter.
 
+Example:
+```shell script
+python3 fcst_console_ui.py example_config.json
+```
+
 ### JSON configuration file
 Configuration file is in form of dictionary, which contains following elements:
 - fcst_ip: string
@@ -65,17 +70,21 @@ config.json
 ```
 
 ### Project Structure
-Project consists of one folder and two files:
+Project consists of one folder and three files:
 - fcst folder
 - fcst_console_ui.py
 - fpga_mockup.py
+- config.json
 
 #### fcst folder
-It contains all modules for FCST. main.py contains all methods needed for performing whole test, but it does not 
+It contains all modules for FCST. manager.py contains all methods needed for performing whole test, but it does not 
 provide any user interface.
 
 #### fcst_console_ui.py
-Provides user interface for main.py.
+Provides user interface for manager.py.
 
 #### fpga_mockup.py
 Substitution for real FPGA. It imitates its responses.
+
+#### example_config.json
+Working configuration file with example values.
