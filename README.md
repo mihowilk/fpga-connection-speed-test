@@ -22,6 +22,7 @@ Configuration file is in form of dictionary, which contains following elements:
 
 datagram_t is dictionary that contains following elements:
 - fpga_port: int
+- data_length: int
 - data_hex: string OR data_dec: string OR data_bin: string
 
 
@@ -44,30 +45,17 @@ test starts.
 #### setup_datagrams
 This list contains info about datagrams that will be sent before starting the test.
 
+#### fpga_port
+This int contains port about on which this datagram will be sent.
+
+#### data_length
+This int is number of bytes in which data will be stored. If no data_length is given, minimal number of bytes, that data can fit in, is calculated. 
+
+#### data_hex OR data_bin OR data_dec
+This string contains data that will be sent in this packet. This data could be given in hexadecimal, decimal or binary format.
+
 #### Example
-config.json
-```json
-{
-    "fcst_ip": "127.0.0.12",
-    "fcst_port_in": 12666,
-    "fcst_port_out": 12666,
-    "fpga_ip": "127.0.0.11",
-    "start_datagram": {
-        "fpga_port": 12666,
-        "data_hex": "0x180"
-    },
-    "setup_datagrams": [
-        {
-            "fpga_port": 14666,
-            "data_dec": "1400"
-        },
-        {
-            "fpga_port": 15666,
-            "data_bin": "100000"
-        }
-    ]
-}
-```
+Example can be found in example_config.json
 
 ### Project Structure
 Project consists of one folder and three files:
