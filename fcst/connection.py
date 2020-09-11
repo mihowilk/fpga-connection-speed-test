@@ -1,5 +1,8 @@
 import socket
+from scapy.packet import Raw
+from scapy.layers.inet import IP, UDP
 
+ETH_P_ALL = 3
 
 class Connection:
 
@@ -9,17 +12,16 @@ class Connection:
         self.sock_in = None
 
     def prepare_sockets(self):
-        self.sock_out = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock_out.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock_out.bind((self.setup.fcst_ip, self.setup.fcst_port_out))
+        self.sock_out = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETH_P_ALL))
+        self.sock_out.bind((self.setup.iface, 0))
 
-        self.sock_in = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock_in.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock_in = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETH_P_ALL))
         self.sock_in.settimeout(1.0)
-        self.sock_in.bind((self.setup.fcst_ip, self.setup.fcst_port_in))
+        self.sock_in.bind((self.setup.iface))
 
     def send_to_fpga(self, datagram):
-        self.sock_out.sendto(datagram.data, datagram.destination)
+        packet = IP(dst=datagram.destination, src=SRC_IP)/UDP(sport=12666, dport=12666)/Raw(load=datagram.data)
+        self.sock_out.send(packet)
 
     def rec_from_fpga(self, buffer_size):
         return self.sock_in.recv(buffer_size)

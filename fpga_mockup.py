@@ -1,10 +1,14 @@
 import socket
-import multiprocessing
+from scapy.packet import Raw
+from scapy.layers.inet import IP, UDP
 
 FPGA_IP = '127.0.0.11'
+FPGA_UDP_PORT = 12666
 SPEED_TESTING_IP = '127.0.0.12'
 SPEED_TESTING_UDP_PORT = 12666
+IFACE = 'lo'
 PADDING_VALUE = b'\xd1'
+
 
 def is_nth_bit_set(x: int, n: int):
     if x & (1 << n):
@@ -12,100 +16,88 @@ def is_nth_bit_set(x: int, n: int):
     return False
 
 class FpgaMockup:
-    def __init__(self, setup_ip):
-        self.setup_ip = setup_ip
-        self.setup_sock_12666 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.setup_sock_14666 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.setup_sock_15666 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.setup_sock_12666.bind((setup_ip, 12666))
-        self.setup_sock_14666.bind((setup_ip, 14666))
-        self.setup_sock_15666.bind((setup_ip, 15666))
-        self.on = multiprocessing.Value('b', False)
-        self.mode = multiprocessing.Value('i', 0)
-        self.padding = multiprocessing.Value('i', 0)
-        self.number_of_test_packets = multiprocessing.Value('i', 10)
+    def __init__(self, setup_iface):
+        self.setup_sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETH_P_ALL))
+        self.setup_sock.bind((setup_iface, 0))
+        self.on = False
+        self.mode = 0
+        self.padding = 0
+        self.number_of_test_packets = 10
 
-    def listening_on_12666(self):
-        print("Listening on 12666...")
-        data = self.setup_sock_12666.recvfrom(16)[0]
-        print("Finished Listening on 12666.")
+    def listening(self):
+        try:
+            print("Listening...")
+            received_data = self.setup_sock.recv(4096)
+            data = IP(received_data)
+            if(packet.getfieldval('sport') == 12666):
+                self.received_on_12666(data.getfield_and_val('load'))
+            if(packet.getfieldval('sport') == 14666):
+                self.received_on_14666(data.getfield_and_val('load'))
+            if(packet.getfieldval('sport') == 15666):
+                self.received_on_15666(data.getfield_and_val('load'))
+        except:
+            pass
 
+    def received_on_12666(self, data):
         print(f'Received setup on port 12666, setup message: {data}')
         integer = int.from_bytes(data, 'big')
 
         if is_nth_bit_set(integer, 9):
             if is_nth_bit_set(integer, 8):
-                self.mode.value = 3               #11 - not used 
+                self.mode = 3               #11 - not used 
             else:
-                self.mode.value = 2               #10 - continous mode 
+                self.mode = 2               #10 - continous mode 
         else:
             if is_nth_bit_set(integer, 8):
-                self.mode.value = 1               #01 - burst mode
+                self.mode = 1               #01 - burst mode
             else:
-                self.mode.value = 0               #00 - single shot
+                self.mode = 0               #00 - single shot
 
-        print(f'Mode set to: {self.mode.value}')
+        print(f'Mode set to: {self.mode}')
         
-        self.on.value = is_nth_bit_set(integer, 7)
-        print(f'Start sending = {self.on.value}')
+        self.on = is_nth_bit_set(integer, 7)
+        print(f'Start sending = {self.on}')
 
-    def listening_on_14666(self):
-        print("Listening on 14666...")
-        data = self.setup_sock_14666.recvfrom(16)[0]
-        print("Finished Listening on 14666.")
-
+    def received_on_14666(self, data):
         print(f'Received setup on port 14666, setup message: {data}')
-        self.padding.value = int.from_bytes(data, 'big')
-        print(f"Set padding to {self.padding.value}")
+        self.padding = int.from_bytes(data, 'big')
+        print(f"Set padding to {self.padding}")
 
-    def listening_on_15666(self):
-        print("Listening on 15666...")
-        data = self.setup_sock_15666.recvfrom(64)[0]
-        print("Finished Listening on 15666.")
-
+    def received_on_15666(self, data):
         print(f'Received setup on port 15666, setup message: {data}')
-        self.number_of_test_packets.value = int.from_bytes(data, 'big')
-        print(f"Set number of packets to {self.number_of_test_packets.value}")
+        self.number_of_test_packets = int.from_bytes(data, 'big')
+        print(f"Set number of packets to {self.number_of_test_packets}")
 
-    def send_packet(self, message, speed_testing_ip, speed_testing_udp_port):
-        self.setup_sock_12666.sendto(message,
-                            (speed_testing_ip, speed_testing_udp_port))
+    def send_packet(self, packet):
+        self.setup_sock.send(packet)
 
-    def sending(self, speed_testing_ip, speed_testing_udp_port):
-        
-        if self.mode.value == 1:
-            print(f'Sending {self.number_of_test_packets.value} packets')
-            for i in range(self.number_of_test_packets.value):
-                self.send_packet((i+1).to_bytes(8, "big")+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
+    def sending(self, dst_ip, src_ip, dstport, srcport):
+        if self.mode == 1:
+            print(f'Sending {self.number_of_test_packets} packets')
+            for i in range(self.number_of_test_packets):
+                packet = IP(dst=dst_ip, src=src_ip)/UDP(sport=srcport, dport=dstport)/Raw(load=((i+1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
+                self.send_packet(Raw(packet))
 
-        if self.mode.value == 0:
+        if self.mode == 0:
             print(f'Sending single packet')
-            self.send_packet(int(1).to_bytes(8, "big")+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
+            packet = IP(dst=dst_ip, src=src_ip)/UDP(sport=srcport, dport=dstport)/Raw(load=((1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
+            self.send_packet(Raw(packet))
 
-        if self.mode.value == 2:
+        if self.mode == 2:
             print(f'Sending continous packets')
             counter = 1
             while(True):
-                self.send_packet(counter.to_bytes(8, "big")+PADDING_VALUE*self.padding.value, speed_testing_ip, speed_testing_udp_port)
+                packet = IP(dst=dst_ip, src=src_ip)/UDP(sport=srcport, dport=dstport)/Raw(load=((i+1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
+                self.send_packet(Raw(packet))
                 counter += 1
 
-        if self.mode.value == 3:
+        if self.mode == 3:
             print(f'Not sending packets')
 
 if __name__ == "__main__":
-    testing_fpga = FpgaMockup(FPGA_IP)
-    while(testing_fpga.on.value == False):
-        p1 = multiprocessing.Process(target=testing_fpga.listening_on_12666)
-        p2 = multiprocessing.Process(target=testing_fpga.listening_on_14666)
-        p3 = multiprocessing.Process(target=testing_fpga.listening_on_15666)
+    testing_fpga = FpgaMockup(IFACE)
+    while(testing_fpga.on == False):
+        testing_fpga.listening()
 
-        p1.start()
-        p2.start()
-        p3.start()
-
-        p1.join(1)
-        p2.join(1)
-        p3.join(1)
-
-    testing_fpga.sending(SPEED_TESTING_IP, SPEED_TESTING_UDP_PORT)
+    testing_fpga.sending(SPEED_TESTING_IP, FPGA_IP, SPEED_TESTING_UDP_PORT, FGPA_UDP_PORT)
     print("Finished sending.")
