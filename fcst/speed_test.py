@@ -23,23 +23,27 @@ class SpeedTest:
         self._listen_and_snapshot()
 
     def _receive_first_packet(self):
-        try:
-            data = self.connection.rec_from_fpga(buffer_size=1500)
-            ResultParameters.packets_received += 1
-            self.start_time = time.time()
-            self.latest_packet_delta_time = 0
-            self.first_packet_counter = self.latest_packet_counter = self._extract_packet_counter(data)
-            ResultParameters.udp_data_length = len(data)
-        except socket.timeout:
-            raise NoPacketsReceived
-        except (WrongPort, AttributeError):
-            pass
+        wrong_port = True
+        while wrong_port:
+            try:
+                data = self.connection.rec_from_fpga(buffer_size=1500)
+                ResultParameters.packets_received += 1
+                self.start_time = time.time()
+                self.latest_packet_delta_time = 0
+                self.first_packet_counter = self._extract_packet_counter(data)
+                self.latest_packet_counter = self._extract_packet_counter(data)
+                ResultParameters.udp_data_length = len(data)
+                wrong_port = False
+            except socket.timeout:
+                raise NoPacketsReceived
+            except (WrongPort, AttributeError):
+                pass
 
     def _listen_and_snapshot(self):
         ongoing = True
         while ongoing:
             try:
-                data = self.connection.rec_from_fpga(buffer_size=16)
+                data = self.connection.rec_from_fpga(buffer_size=4096)
                 ResultParameters.packets_received += 1
                 self.latest_packet_counter = self._extract_packet_counter(data)
                 self.latest_packet_delta_time = time.time() - self.start_time

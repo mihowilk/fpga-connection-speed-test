@@ -1,6 +1,6 @@
 import socket
 from scapy.all import *
-from .exceptions import WrongPort
+from .exceptions import *
 
 ETH_P_ALL = 3
 
@@ -12,6 +12,7 @@ class Connection:
 
     def prepare_sockets(self):
         self.sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETH_P_ALL))
+        self.sock.settimeout(10.0)
         self.sock.bind((self.setup.fcst_iface, 0))
 
     def send_to_fpga(self, datagram, setup):
@@ -22,7 +23,8 @@ class Connection:
         received_data = self.sock.recv(buffer_size)
         data = IP(received_data)
         if(data.getfieldval('dport') == 12666):
-            return data.getfieldval('load')
+            load = data.getfieldval('load')
+            return load
         else:
             raise WrongPort
 
