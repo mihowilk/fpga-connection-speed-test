@@ -23,12 +23,12 @@ class Manager:
         if not self.setup.is_properly_configured():
             raise IncompleteSetup
         for datagram in self.setup.setup_datagrams:
-            self.connection.send_to_fpga(datagram)
+            self.connection.send_to_fpga(datagram, self.setup)
 
     def start_test(self):
         if not self.setup.is_properly_configured():
             raise IncompleteSetup
-        self.connection.send_to_fpga(self.setup.start_datagram)
+        self.connection.send_to_fpga(self.setup.start_datagram, self.setup)
         SpeedTest(self.logger, self.connection).run()
 
 

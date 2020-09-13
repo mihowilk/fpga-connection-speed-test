@@ -20,3 +20,6 @@ class GeneralSetupError(Exception):
 
 class NoPacketsReceived(Exception):
     pass
+
+class WrongPort(Exception):
+    pass

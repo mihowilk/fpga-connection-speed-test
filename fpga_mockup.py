@@ -19,6 +19,7 @@ class FpgaMockup:
     def __init__(self, setup_iface):
         self.setup_sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETH_P_ALL))
         self.setup_sock.bind((setup_iface, 0))
+        self.setup_sock.settimeout(1.0)
         self.on = False
         self.mode = 0
         self.padding = 0
@@ -29,13 +30,18 @@ class FpgaMockup:
             print("Listening...")
             received_data = self.setup_sock.recv(4096)
             data = IP(received_data)
-            if(packet.getfieldval('sport') == 12666):
-                self.received_on_12666(data.getfield_and_val('load'))
-            if(packet.getfieldval('sport') == 14666):
-                self.received_on_14666(data.getfield_and_val('load'))
-            if(packet.getfieldval('sport') == 15666):
-                self.received_on_15666(data.getfield_and_val('load'))
-        except:
+            if(data.getfieldval('dport') == 12666):
+                self.received_on_12666(data.getfieldval('load'))
+            if(data.getfieldval('dport') == 14666):
+                self.received_on_14666(data.getfieldval('load'))
+            if(data.getfieldval('dport') == 15666):
+                self.received_on_15666(data.getfieldval('load'))
+            print("Stoped")
+        except socket.timeout: 
+            print("Timed out")
+            pass
+        except AttributeError:
+            print("Atribute Error")
             pass
 
     def received_on_12666(self, data):
@@ -75,20 +81,20 @@ class FpgaMockup:
         if self.mode == 1:
             print(f'Sending {self.number_of_test_packets} packets')
             for i in range(self.number_of_test_packets):
-                packet = IP(dst=dst_ip, src=src_ip)/UDP(sport=srcport, dport=dstport)/Raw(load=((i+1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
-                self.send_packet(Raw(packet))
+                packet = IP(dst=dst_ip, src=src_ip)/UDP(dport=dstport, sport=srcport)/Raw(load=((i+1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
+                self.send_packet(raw(packet))
 
         if self.mode == 0:
             print(f'Sending single packet')
-            packet = IP(dst=dst_ip, src=src_ip)/UDP(sport=srcport, dport=dstport)/Raw(load=((1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
-            self.send_packet(Raw(packet))
+            packet = IP(dst=dst_ip, src=src_ip)/UDP(dport=dstport, sport=srcport)/Raw(load=((1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
+            self.send_packet(raw(packet))
 
         if self.mode == 2:
             print(f'Sending continous packets')
             counter = 1
             while(True):
-                packet = IP(dst=dst_ip, src=src_ip)/UDP(sport=srcport, dport=dstport)/Raw(load=((i+1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
-                self.send_packet(Raw(packet))
+                packet = IP(dst=dst_ip, src=src_ip)/UDP(dport=dstport, sport=srcport)/Raw(load=((i+1).to_bytes(8, "big")+PADDING_VALUE*self.padding))
+                self.send_packet(raw(packet))
                 counter += 1
 
         if self.mode == 3:
@@ -99,5 +105,5 @@ if __name__ == "__main__":
     while(testing_fpga.on == False):
         testing_fpga.listening()
 
-    testing_fpga.sending(SPEED_TESTING_IP, FPGA_IP, SPEED_TESTING_UDP_PORT, FGPA_UDP_PORT)
+    testing_fpga.sending(SPEED_TESTING_IP, FPGA_IP, SPEED_TESTING_UDP_PORT, FPGA_UDP_PORT)
     print("Finished sending.")

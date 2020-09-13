@@ -1,7 +1,7 @@
 import socket
 import time
 
-from .exceptions import NoPacketsReceived
+from .exceptions import NoPacketsReceived, WrongPort
 
 
 class SpeedTest:
@@ -32,6 +32,8 @@ class SpeedTest:
             ResultParameters.udp_data_length = len(data)
         except socket.timeout:
             raise NoPacketsReceived
+        except (WrongPort, AttributeError):
+            pass
 
     def _listen_and_snapshot(self):
         ongoing = True
@@ -46,6 +48,8 @@ class SpeedTest:
                 ongoing = False
                 self._calculate_result_parameters()
                 self.logger.successfully_ended()
+            except (AttributeError, WrongPort):
+                pass
 
     def _calculate_result_parameters(self):
         ResultParameters.packets_transmitted = self.latest_packet_counter - (self.first_packet_counter - 1)

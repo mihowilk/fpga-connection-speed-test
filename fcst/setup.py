@@ -26,6 +26,7 @@ class Setup:
             self.fcst_ip = predefined_setup['fcst_ip']
             self.fcst_port_in = predefined_setup['fcst_port_in']
             self.fcst_port_out = predefined_setup['fcst_port_out']
+            self.fcst_iface = predefined_setup['fcst_iface'] 
         except KeyError:
             raise GeneralSetupError
 
