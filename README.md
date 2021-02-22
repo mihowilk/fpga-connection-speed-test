@@ -76,3 +76,7 @@ Substitution for real FPGA. It imitates its responses.
 
 #### example_config.json
 Working configuration file with example values.
+
+#### Contributors
+- Konrad Walas
+- Michał Ćwierz
